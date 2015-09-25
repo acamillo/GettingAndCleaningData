@@ -4,7 +4,7 @@ projectPath = "UCI"
 ## Create the required working folder.
 pathIn <- file.path(projectPath)
 if(!file.exists(pathIn)) {
-    dir.create(pathIn)
+  dir.create(pathIn)
 } 
 
 url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
@@ -14,9 +14,9 @@ zipFileName  <- paste0(pathIn, "/UCI-HAR-dataset.zip")
 ## Download the database if not already present
 ##
 if ( !file.exists(zipFileName)) {
-    download.file( url, zipFileName, mode = "wb")
-    message("Unzipping  database...")
-    unzip(zipFileName, exdir = pathIn)
+  download.file( url, zipFileName, mode = "wb")
+  message("Unzipping  database...")
+  unzip(zipFileName, exdir = pathIn)
 }
 
 pathIn <- file.path("UCI/UCI HAR Dataset/")
@@ -29,8 +29,8 @@ dtSubject <- rbind(dtSubjectTrain, dtSubjectTest)
 setnames(dtSubject, "V1", "subject")
 
 ## Read and merge the train and test dataset
-dtActivityTrain <- fread(file.path(pathIn, "train", "Y_train.txt"))
-dtActivityTest <- fread(file.path(pathIn, "test", "Y_test.txt"))
+dtActivityTrain <- fread(file.path(pathIn, "train", "y_train.txt"))
+dtActivityTest <- fread(file.path(pathIn, "test", "y_test.txt"))
 dtActivity <- rbind(dtActivityTrain, dtActivityTest)
 setnames(dtActivity, "V1", "activityNum")
 
@@ -76,7 +76,7 @@ tt$feature <- factor(tt$featureName)
 
 ### Seperate features from featureName.
 grepthis <- function(regex) {
-    grepl(regex, tt$feature)
+  grepl(regex, tt$feature)
 }
 
 
@@ -107,8 +107,8 @@ setkey(tt, subject, activity, featDomain, featAcceleration, featInstrument,
 dtTidy <- tt[, list(count = .N, average = mean(value)), by = key(tt)]
 
 write.table(dtTidy, file.path(pathIn, "tidyset.txt"), 
-##            quote = FALSE, 
-##            sep = ",", 
+            ##            quote = FALSE, 
+            ##            sep = ",", 
             row.names = FALSE)
 ## xx <- read.table(file.path(pathIn, "tidyset.txt"))
 ## str(xx)
