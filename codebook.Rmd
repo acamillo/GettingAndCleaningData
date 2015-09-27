@@ -1,7 +1,7 @@
 Code Book
 =========
 
-This Codebook is automatically  generated as part of the process for generating the clean tidy dataset.
+This Codebook is automatically  generated as part of the process for generating the clean tidy dataset. The run_analysis.R script uses the $codebook.Rmd$ template to compile a codebook.md file.
 
 ## Variable list and descriptions
 
@@ -10,32 +10,34 @@ Variable name    | Description
 -----------------|------------
 subject          | ID the subject who performed the activity for each window sample. Its range is from 1 to 30.
 activity         | Activity name
-featDomain       | Feature: Time domain signal or frequency domain signal (Time or Freq)
-featInstrument   | Feature: Measuring instrument (Accelerometer or Gyroscope)
-featAcceleration | Feature: Acceleration signal (Body or Gravity)
-featVariable     | Feature: Variable (Mean or SD)
-featJerk         | Feature: Jerk signal
-featMagnitude    | Feature: Magnitude of the signals calculated using the Euclidean norm
-featAxis         | Feature: 3-axial signals in the X, Y and Z directions (X, Y, or Z)
-featCount        | Feature: Count of data points used to compute `average`
-featAverage      | Feature: Average of each variable for each activity and each subject
+Domain           | Feature: Time domain signal or frequency domain signal (Time or Freq)
+Instrument       | Feature: Measuring instrument (Accelerometer or Gyroscope)
+Acceleration     | Feature: Acceleration signal (Body or Gravity)
+Variable         | Feature: Variable (Mean or SD)
+Jerk             | Feature: Jerk signal
+Magnitude        | Feature: Magnitude of the signals calculated using the Euclidean norm
+Axis             | Feature: 3-axial signals in the X, Y and Z directions (X, Y, or Z)
+count            | Feature: Count of data points used to compute `average`
+average          | Feature: Average of each variable for each activity and each subject
 
 ## Dataset structure
 
+This codebook expects to have the tidy dataset in the output directory
+created by run_analsys.R script. It is then imperative to run the run_analysis.R script before opening the coodbook.md file, or it will not work.
 ```{r}
 library(data.table)
 
 pathIn <- file.path("UCI/UCI HAR Dataset/")
 tidy <- data.table(read.table(file.path(pathIn, "tidyset.txt"), header = TRUE))
 
-setkey(tidy, subject, activity, featDomain, featAcceleration, featInstrument, 
-       featJerk, featMagnitude, featVariable, featAxis)
+setkey(tidy, subject, activity, Domain, Acceleration, Instrument, 
+       Jerk, Magnitude, Variable, Axis)
 
 str(tidy)
 ```
 
 
-## Show some of the dataset entries
+## Show the first five dataset entries
 
 ```{r}
 head(tidy, 5)
