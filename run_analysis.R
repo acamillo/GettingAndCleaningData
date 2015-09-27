@@ -61,16 +61,23 @@ ds <- ds[, ss, with = FALSE]
 dtActivityNames <- fread(file.path(pathIn, "activity_labels.txt"))
 setnames(dtActivityNames, names(dtActivityNames), c("activityNum", "activityName"))
 
+## MErge the global data.table with this activity name table.
 ds <- merge(ds, dtActivityNames, by = "activityNum", all.x = TRUE)
 setkey(ds, subject, activityNum, activityName)
 
 ## Now we change the shape of the data.table and merge the activity names.
+## The objective is to reduce the number of columns. All the feature will be listed
+## in a new column called "featureCode" and removed as single columns.
+## After this reshaping process we merge once again the results data.table
+## with feature description table, using, as join column, the new column
+## produced as result of reshaping the table. the featureCode column.
 library(reshape2)
 tt <- data.table(melt(ds, key(ds), variable.name = "featureCode"))
 tt <- merge(tt, dtFeatures[, list(featureNum, featureCode, featureName)], 
             by = "featureCode", 
             all.x = TRUE)
 
+## Transform the activity name and feature name, from strings to factors.
 tt$activity <- factor(tt$activityName)
 tt$feature <- factor(tt$featureName)
 
@@ -79,33 +86,53 @@ grepthis <- function(regex) {
   grepl(regex, tt$feature)
 }
 
+## In the followin part we procude some temporary matrixes, one for each
+## different kind of feature, or in other words, we classify the features
+## in groups based on the number of categories used by each features.
+## These groups are just three, since the feature in the dataset can be
+## classified with one, two or category. For each of this group
+## we extract the relavent factors and produce a temporary matrix "x".
+## Once the temporary matrix are properly filled in, we trasform the matrix
+## into a new column to be added to the final tidy dataset.
 
 ## Features with 2 categories
 n <- 2
-y <- matrix(seq(1, n), nrow = n)
-x <- matrix(c(grepthis("^t"), grepthis("^f")), ncol = nrow(y))
-tt$featDomain <- factor(x %*% y, labels = c("Time", "Freq"))
-x <- matrix(c(grepthis("Acc"), grepthis("Gyro")), ncol = nrow(y))
-tt$featInstrument <- factor(x %*% y, labels = c("Accelerometer", "Gyroscope"))
-x <- matrix(c(grepthis("BodyAcc"), grepthis("GravityAcc")), ncol = nrow(y))
-tt$featAcceleration <- factor(x %*% y, labels = c(NA, "Body", "Gravity"))
-x <- matrix(c(grepthis("mean()"), grepthis("std()")), ncol = nrow(y))
-tt$featVariable <- factor(x %*% y, labels = c("Mean", "SD"))
+temp_column <- matrix(seq(1, n), nrow = n)
+temp_mat <- matrix(c(grepthis("^t"), grepthis("^f")), ncol = nrow(temp_column))
+tt$Domain <- factor(temp_mat %*% temp_column, labels = c("Time", "Freq"))
+temp_mat <- matrix(c(grepthis("Acc"), grepthis("Gyro")), ncol = nrow(temp_column))
+tt$Instrument <- factor(temp_mat %*% temp_column, labels = c("Accelerometer", "Gyroscope"))
+temp_mat <- matrix(c(grepthis("BodyAcc"), grepthis("GravityAcc")), ncol = nrow(temp_column))
+tt$Acceleration <- factor(temp_mat %*% temp_column, labels = c(NA, "Body", "Gravity"))
+temp_mat <- matrix(c(grepthis("mean()"), grepthis("std()")), ncol = nrow(temp_column))
+tt$Variable <- factor(temp_mat %*% temp_column, labels = c("Mean", "SD"))
 
 ## Features with 1 category
-tt$featJerk <- factor(grepthis("Jerk"), labels = c(NA, "Jerk"))
-tt$featMagnitude <- factor(grepthis("Mag"), labels = c(NA, "Magnitude"))
+tt$Jerk <- factor(grepthis("Jerk"), labels = c(NA, "Jerk"))
+tt$Magnitude <- factor(grepthis("Mag"), labels = c(NA, "Magnitude"))
 
 ## Features with 3 categories
 n <- 3
-y <- matrix(seq(1, n), nrow = n)
-x <- matrix(c(grepthis("-X"), grepthis("-Y"), grepthis("-Z")), ncol = nrow(y))
-tt$featAxis <- factor(x %*% y, labels = c(NA, "X", "Y", "Z"))
+temp_column <- matrix(seq(1, n), nrow = n)
+temp_mat <- matrix(c(grepthis("-X"), grepthis("-Y"), grepthis("-Z")), ncol = nrow(temp_column))
+tt$Axis <- factor(temp_mat %*% temp_column, labels = c(NA, "X", "Y", "Z"))
 
-setkey(tt, subject, activity, featDomain, featAcceleration, featInstrument, 
-       featJerk, featMagnitude, featVariable, featAxis)
+
+## The tidy dataset is almost ready. We now set the indexing key as a
+## combination of the subject + the activity + all the features extracted.
+setkey(tt, subject, activity, Domain, Acceleration, Instrument, 
+       Jerk, Magnitude, Variable, Axis)
+
+## We are ready. For each group of features, according to the definition of its key
+## of the data.table, as set in the line above,  we count the elements and calculate
+## the mean value thus reducing and reducing the number of raw observations from about
+## 680K yo just 12K.
 dtTidy <- tt[, list(count = .N, average = mean(value)), by = key(tt)]
 
+# Finally we dump the tidy dateset to an output file. This process loose
+# all the attributes created by this script such as factor, key etc.
+# This is unavoidable since the assignment specification requires us
+# to export the tidy dataset into a portable format as write.table does.
 write.table(dtTidy, file.path(pathIn, "tidyset.txt"), 
             ##            quote = FALSE, 
             ##            sep = ",", 
